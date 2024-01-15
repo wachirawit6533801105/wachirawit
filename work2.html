@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My A-Frame Scene with glTF Model</title>
+    <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+</head>
+
+<body>
+    <a-scene>
+        <!-- Add a-sky to set the background -->
+        <a-sky src="./20220306_124749.jpg"></a-sky>
+
+        <!-- Add a-text for text -->
+        <a-text value="wachirawit taengthonglang 653380110-5 sec.1 it" position="-2 2 -3" color="red"></a-text>
+
+        <!-- Add a-img for an image -->
+        <!-- <a-img src="./addfef27a0f081ec9220bec30c932b79.jpg" position="2 1 -5" width="2" height="2"></a-img> -->
+
+        <!-- Add glTF model using a-entity -->
+        <a-entity gltf-model="url(C:/Users/maika/Documents/all_code_doc/scene.gltf)" position="-2 2 -3" scale="10 10 10"></a-entity>
+
+        <!-- Add a-camera with a-cursor -->
+        <a-camera>
+            <a-cursor></a-cursor>
+        </a-camera>
+    </a-scene>
+</body>
+
+</html>
