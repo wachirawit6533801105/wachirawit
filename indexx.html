@@ -1,304 +1,536 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TSCR</title>
-  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
-  <link href="https://cdn.jsdelivr.net/npm/vuetify@3.4.10/dist/vuetify.min.css" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/vuetify@3.4.10/dist/vuetify.min.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
-</head>
-<body>
-  <div id="app">
-    <v-app>
-      <v-main>
-        <v-container fluid>
-          <v-row>
-            <v-col>
-              <v-card>
-                <v-card-title class="bg-blue-grey">
-                  TSCR - Teacher Student Classroom
-                </v-card-title>
-                <v-card-text class="pa-6">
-                  <v-card-actions>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TSCR</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <link
+      href="https://cdn.jsdelivr.net/npm/vuetify@3.4.10/dist/vuetify.min.css"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/vuetify@3.4.10/dist/vuetify.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  </head>
+  <body>
+    <div id="app">
+      <v-app>
+        <v-main>
+          <v-container fluid>
+            <v-row>
+              <v-col>
+                <v-card>
+                  <v-card-title class="bg-blue-grey">
+                    TSCR - Teacher Student Classroom
+                  </v-card-title>
+                  <v-card-text class="pa-6">
+                    <v-card-actions>
+                      <template v-if="user">
+                        <div class="pa-2">
+                          <v-avatar>
+                            <img :src="user.photoURL" />
+                          </v-avatar>
+                        </div>
+                        <div class="pa-2">
+                          {{ user.displayName }}<br />
+                          {{ user.email }}<br />
+                        </div>
+                      </template>
+                      <v-btn @click="google_login()" v-if="!user"> Login</v-btn>
+                      <v-btn @click="google_logout()" v-if="user">
+                        Logout</v-btn
+                      >
+                    </v-card-actions>
+
                     <template v-if="user">
-                      <div class="pa-2">
-                        <v-avatar>
-                          <img :src="user.photoURL" />
-                        </v-avatar>
-                      </div>
-                      <div class="pa-2">
-                        {{ user.displayName }}<br />
-                        {{ user.email }}<br />
-                      </div>
-                    </template>
-                    <v-btn @click="google_login()" v-if="!user"> Login</v-btn>
-                    <v-btn @click="google_logout()" v-if="user"> Logout</v-btn>
-                  </v-card-actions>
-
-                  <template v-if="user">
-                    <div v-if="isTeacher">
-                      <!-- Teacher View -->
-                      <v-card>
-                        <v-card-title>ประวัติการเช็คชื่อ</v-card-title>
-                        <v-card-text>
-                            <v-text-field v-model="newCheckinData.subject" label="วิชา"></v-text-field>
-                            <v-text-field v-model="newCheckinData.room" label="ห้องเรียน"></v-text-field>
-                            <v-text-field v-model="newCheckinData.class_date" type="date" label="วันที่"></v-text-field>
-
-                          <v-btn @click="addCheckin()">เพิ่มการเช็คชื่อ</v-btn>
-                          <v-list>
-                            <v-list-item v-for="checkin in checkins" :key="checkin.id">
-                              <v-list-item-title>{{ checkin.subject }} - {{ checkin.room }} ({{ checkin.class_date }})</v-list-item-title>
-                              <v-list-item-action>
-                                <v-btn @click="viewCheckin(checkin)">ดูข้อมูล</v-btn>
-                              </v-list-item-action>
-                            </v-list-item>
-                          </v-list>
-                        </v-card-text>
-                      </v-card>
-
-                      <v-dialog v-model="checkinDialog" persistent max-width="600px">
+                      <div v-if="isTeacher">
+                        <!-- Teacher View -->
                         <v-card>
-                          <v-card-title>
-                            <span class="text-h5">{{ selectedCheckin.subject }} - {{ selectedCheckin.room }} ({{ selectedCheckin.class_date }})</span>
-                          </v-card-title>
+                          <v-card-title>ประวัติการเช็คชื่อ</v-card-title>
                           <v-card-text>
-                            <v-list subheader>
-                              <v-subheader>นักเรียนที่เข้าเรียน</v-subheader>
-                              <v-list-item v-for="student in checkedInStudents" :key="student.id">
-                                <v-list-item-title>{{ student.name }}</v-list-item-title>
+                            <v-text-field
+                              v-model="newCheckinData.subject"
+                              label="วิชา"
+                            ></v-text-field>
+                            <v-text-field
+                              v-model="newCheckinData.room"
+                              label="ห้องเรียน"
+                            ></v-text-field>
+                            <v-text-field
+                              v-model="newCheckinData.class_date"
+                              type="date"
+                              label="วันที่"
+                            ></v-text-field>
+
+                            <v-btn @click="addCheckin()"
+                              >เพิ่มการเช็คชื่อ</v-btn
+                            >
+                            <v-list>
+                              <v-list-item
+                                v-for="checkin in checkins"
+                                :key="checkin.id"
+                              >
+                                <v-list-item-title
+                                  >{{ checkin.subject }} - {{ checkin.room }}
+                                  ({{ checkin.class_date }})</v-list-item-title
+                                >
+                                <v-list-item-action>
+                                  <v-btn @click="viewCheckin(checkin)"
+                                    >ดูข้อมูล</v-btn
+                                  >
+                                  <v-btn @click="deleteCheckinDialog(checkin.id)">ลบ</v-btn>
+                                  <v-btn @click="editCheckin(checkin.id, updatedData)">แก้ไข</v-btn>
+
+                                </v-list-item-action>
+                                <v-dialog v-model="editDialog" persistent max-width="600px">
+                                  <v-card>
+                                    <v-card-title>
+                                      แก้ไขข้อมูลห้องเรียน
+                                    </v-card-title>
+                                    <v-card-text>
+                                      <v-text-field v-model="selectedCheckin.subject" label="วิชา"></v-text-field>
+                                      <v-text-field v-model="selectedCheckin.room" label="ห้องเรียน"></v-text-field>
+                                    </v-card-text>
+                                    <v-card-actions>
+                                      <v-btn color="primary" @click="updateCheckin">บันทึก</v-btn>
+                                      <v-btn color="blue darken-1" @click="cancelEdit">ยกเลิก</v-btn>
+                                    </v-card-actions>
+                                  </v-card>
+                                </v-dialog>
+                                
                               </v-list-item>
                             </v-list>
+                          </v-card-text>
+                        </v-card>
 
-                            <v-subheader>คำถาม</v-subheader>
-                            <v-list v-for="(question, index) in questions" :key="index">
+                        <v-dialog
+                          v-model="checkinDialog"
+                          persistent
+                          max-width="600px"
+                        >
+                          <v-card>
+                            <v-card-title>
+                              <span class="text-h5"
+                                >{{ selectedCheckin.subject }} - {{
+                                selectedCheckin.room }} ({{
+                                selectedCheckin.class_date }})</span
+                              >
+                            </v-card-title>
+                            <v-card-text>
+                              <v-list subheader>
+                                <v-subheader>นักเรียนที่เข้าเรียน</v-subheader>
+                                <v-list-item
+                                  v-for="student in checkedInStudents"
+                                  :key="student.id"
+                                >
+                                  <v-list-item-title
+                                    >{{ student.name }}</v-list-item-title
+                                  >
+                                </v-list-item>
+                              </v-list>
+
+                              <v-subheader>คำถาม</v-subheader>
+                              <v-list
+                              v-for="(question, qIndex) in questions"
+                              :key="question.id"
+                            > 
+                                <v-list-item>
+                                  <v-list-item-content>
+                                    <v-list-item
+                                    v-for="(question, qIndex) in questions"
+                                    :key="question.id"
+                                                      >
+                                    <v-list-item-content>
+                                    <v-list-item-title>คำถามที่ {{ qIndex + 1 }}:</v-list-item-title>
+                                    <v-list-item-subtitle>{{ question.text }}</v-list-item-subtitle>
+                                    </v-list-item-content>
+                                  </v-list-item-content>
+                                </v-list-item>
+                                <v-list-item
+                                    v-for="(answer, aIndex) in question.answers"
+                                 :key="answer.id"
+                                  >
+                                  <v-list-item-content>
+                                    <v-list-item-title
+                                      >{{ answer.student.name
+                                      }}:</v-list-item-title
+                                    >
+                                    <v-list-item-subtitle
+                                      >{{ answer.text }}</v-list-item-subtitle
+                                    >
+                                  </v-list-item-content>
+                                </v-list-item>
+                              </v-list>
+                              <v-text-field
+                                v-model="newQuestion"
+                                label="เพิ่มคำถาม"
+                              ></v-text-field>
+                              <v-btn @click="addQuestion()">เพิ่มคำถาม</v-btn>
+                            </v-card-text>
+                            <v-card-actions>
+                              <v-spacer></v-spacer>
+                              <v-btn
+                                color="blue darken-1"
+                                text
+                                @click="checkinDialog = false"
+                                >ปิด</v-btn
+                              >
+                            </v-card-actions>
+                          </v-card>
+                        </v-dialog>
+                      </div>
+
+                      <div v-else>
+                        <!-- Student View -->
+                        <v-card>
+                          <v-card-title>เข้าห้องเรียน</v-card-title>
+                          <v-card-text>
+                            <v-text-field
+                              v-model="checkinCode"
+                              label="รหัสการเช็คชื่อ"
+                            ></v-text-field>
+                            <v-btn @click="checkinClass()">เข้าห้องเรียน</v-btn>
+                          </v-card-text>
+                        </v-card>
+
+                        <v-card>
+                          <v-card-title>คำถามในห้องเรียน</v-card-title>
+                          <v-card-text>
+                            <v-list
+                              v-for="(question, index) in questions"
+                              :key="question.id"
+                            >
                               <v-list-item>
                                 <v-list-item-content>
-                                  <v-list-item-title>คำถามที่ {{ index + 1 }}:</v-list-item-title>
-                                  <v-list-item-subtitle>{{ question.text }}</v-list-item-subtitle>
+                                  <v-list-item-title
+                                    >คำถามที่ {{ index + 1 }}:</v-list-item-title
+                                  >
+                                  <v-list-item-subtitle
+                                    >{{ question.text }}</v-list-item-subtitle
+                                  >
                                 </v-list-item-content>
                               </v-list-item>
-                              <v-list-item v-for="answer in question.answers" :key="answer.id">
-                                <v-list-item-content>
-                                  <v-list-item-title>{{ answer.student.name }}:</v-list-item-title>
-                                  <v-list-item-subtitle>{{ answer.text }}</v-list-item-subtitle>
-                                </v-list-item-content>
-                              </v-list-item>
+                              <v-text-field
+                                v-model="answers[index]"
+                                label="คำตอบ"
+                              ></v-text-field>
                             </v-list>
-                            <v-text-field v-model="newQuestion" label="เพิ่มคำถาม"></v-text-field>
-                            <v-btn @click="addQuestion()">เพิ่มคำถาม</v-btn>
                           </v-card-text>
                           <v-card-actions>
-                            <v-spacer></v-spacer>
-                            <v-btn color="blue darken-1" text @click="checkinDialog = false">ปิด</v-btn>
+                            <v-btn color="primary" @click="submitAllAnswers"
+                              >ส่งคำตอบทั้งหมด</v-btn
+                            >
                           </v-card-actions>
                         </v-card>
-                      </v-dialog>
-                    </div>
+                      </div>
+                    </template>
+                  </v-card-text>
+                </v-card>
+              </v-col>
+            </v-row>
+          </v-container>
+        </v-main>
+      </v-app>
+    </div>
 
-                    <div v-else>
-                      <!-- Student View -->
-                      <v-card>
-                        <v-card-title>เข้าห้องเรียน</v-card-title>
-                        <v-card-text>
-                          <v-text-field v-model="checkinCode" label="รหัสการเช็คชื่อ"></v-text-field>
-                          <v-btn @click="checkinClass()">เข้าห้องเรียน</v-btn>
-                        </v-card-text>
-                      </v-card>
+    <script>
+      const firebaseConfig = {
+        // Your Firebase configuration
+        apiKey: "AIzaSyC99wl8Dz1f6eVuyJJ2HvyA7-zE_lpOMJM",
+        authDomain: "project-b6f0e.firebaseapp.com",
+        projectId: "project-b6f0e",
+        storageBucket: "project-b6f0e.appspot.com",
+        messagingSenderId: "280587949859",
+        appId: "1:280587949859:web:1c915ed49f3371f8605e96",
+        measurementId: "G-X6VKQJB4QY",
+      };
 
-                      <v-card>
-                        <v-card-title>คำถามในห้องเรียน</v-card-title>
-                        <v-card-text>
-                          <v-list v-for="(question, index) in questions" :key="index">
-                            <v-list-item>
-                              <v-list-item-content>
-                                <v-list-item-title>คำถามที่ {{ index + 1 }}:</v-list-item-title>
-                                <v-list-item-subtitle>{{ question.text }}</v-list-item-subtitle>
-                              </v-list-item-content>
-                            </v-list-item>
-                            <v-text-field v-model="answers[index]" label="คำตอบ"></v-text-field>
-                            <v-btn @click="submitAnswer(index)">ส่งคำตอบ</v-btn>
-                          </v-list>
-                        </v-card-text>
-                      </v-card>
-                    </div>
-                  </template>
-                </v-card-text>
-              </v-card>
-            </v-col>
-          </v-row>
-        </v-container>
-      </v-main>
-    </v-app>
-  </div>
+      // Initialize Firebase
+      firebase.initializeApp(firebaseConfig);
+      const db = firebase.firestore();
+      const auth = firebase.auth();
 
-  <script>
-    const firebaseConfig = {
-      // Your Firebase configuration
-      apiKey: "AIzaSyC99wl8Dz1f6eVuyJJ2HvyA7-zE_lpOMJM",
-      authDomain: "project-b6f0e.firebaseapp.com",
-      projectId: "project-b6f0e",
-      storageBucket: "project-b6f0e.appspot.com",
-      messagingSenderId: "280587949859",
-      appId: "1:280587949859:web:1c915ed49f3371f8605e96",
-      measurementId: "G-X6VKQJB4QY"
-    };
-
-    // Initialize Firebase
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
-    const auth = firebase.auth();
-
-    const vuetify = Vuetify.createVuetify();
-    const app = Vue.createApp({
-      data() {
-        return {
-          user: null,
-          isTeacher: false,
-          checkins: [],
-          selectedCheckin: {},
-          checkinDialog: false,
-          checkedInStudents: [],
-          questions: [],
-          newQuestion: '',
-          checkinCode: '',
-          answers: [],
-          newCheckinData: {
-      subject: '',
-      room: '',
-      class_date: new Date().toISOString().substr(0, 10), // ตั้งค่าเริ่มต้นเป็นวันปัจจุบัน
-    },
-        }
-      },
-      mounted() {
-        // Check user authentication state
-        auth.onAuthStateChanged((user) => {
-          if (user) {
-            this.user = user;
-            this.checkUserRole();
-          } else {
-            this.user = null;
-            this.isTeacher = false;
-          }
-        });
-
-        // Get checkins from Firestore
-        db.collection('checkins').onSnapshot((snapshot) => {
-          this.checkins = snapshot.docs.map((doc) => ({
-            id: doc.id,
-            ...doc.data()
-          }));
-        });
-      },
-      methods: {
-        google_login() {
-          const provider = new firebase.auth.GoogleAuthProvider();
-          auth.signInWithPopup(provider);
+      const vuetify = Vuetify.createVuetify();
+      const app = Vue.createApp({
+        data() {
+          return {
+            user: null,
+            isTeacher: false,
+            checkins: [],
+            selectedCheckin: {},
+            checkinDialog: false,
+            checkedInStudents: [],
+            questions: [],
+            newQuestion: "",
+            checkinCode: "",
+            answers: [],
+            newCheckinData: {
+              subject: "",
+              room: "",
+              class_date: new Date().toISOString().substr(0, 10), // ตั้งค่าเริ่มต้นเป็นวันปัจจุบัน
+            },
+          };
         },
-        google_logout() {
-          auth.signOut();
-        },
-        checkUserRole() {
-          db.collection('teachers').doc(this.user.email).get().then((doc) => {
-            this.isTeacher = doc.exists;
+        mounted() {
+          // Check user authentication state
+          auth.onAuthStateChanged((user) => {
+            if (user) {
+              this.user = user;
+              this.checkUserRole();
+            } else {
+              this.user = null;
+              this.isTeacher = false;
+            }
           });
-        },
-  addCheckin() {
-    const checkinId = this.generateRandomId();
-    db.collection('checkins').doc(checkinId).set({
-      subject: this.newCheckinData.subject,
-      room: this.newCheckinData.room,
-      class_date: this.newCheckinData.class_date // หมายเหตุ: คุณอาจต้องแปลงเป็น Timestamp ของ Firestore ตามต้องการ
-    }).then(() => {
-      console.log('Check-in added successfully');
-      // Reset form after successful submission
-      this.newCheckinData = { subject: '', room: '', class_date: new Date().toISOString().substr(0, 10) };
-    }).catch(error => {
-      console.error("Error adding check-in: ", error);
-    });
-  },
-  generateRandomId() {
-    return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-  },
-        viewCheckin(checkin) {
-          this.selectedCheckin = checkin;
-          this.getCheckedInStudents();
-          this.getQuestions();
-          this.checkinDialog = true;
-        },
-        getCheckedInStudents() {
-          db.collection('students').where('checkins', 'array-contains', this.selectedCheckin.id).get().then((snapshot) => {
-            this.checkedInStudents = snapshot.docs.map((doc) => ({
+
+          // Get checkins from Firestore
+          db.collection("checkins").onSnapshot((snapshot) => {
+            this.checkins = snapshot.docs.map((doc) => ({
               id: doc.id,
-              ...doc.data()
+              ...doc.data(),
             }));
           });
         },
-        getQuestions() {
-  db.collection('checkins').doc(this.selectedCheckin.id).collection('questions').onSnapshot((snapshot) => {
-    this.questions = snapshot.docs.map((doc) => ({
-      id: doc.id,
-      text: doc.data().text,
-      answers: []
-    }));
-  });
-},
-        addQuestion() {
-          if (this.newQuestion.trim() !== '') {
-            db.collection('checkins').doc(this.selectedCheckin.id).collection('questions').add({
-              text: this.newQuestion
-            });
-            this.newQuestion = '';
-          }
-        },
-checkinClass() {
-  const checkinId = this.checkinCode;
-  db.collection('checkins').doc(checkinId).get().then((doc) => {
-    if (doc.exists) {
-      db.collection('students').doc(this.user.email).update({
-        checkins: firebase.firestore.FieldValue.arrayUnion(checkinId)
-      });
-      
-      // Fetch questions for this checkin
-      db.collection('checkins').doc(checkinId).collection('questions').get().then((querySnapshot) => {
-        this.questions = querySnapshot.docs.map(doc => ({
-          id: doc.id,
-          text: doc.data().text,
-          answers: []
-        }));
-      });
-      
-      this.answers = new Array(this.questions.length).fill('');
-    } else {
-      alert('รหัสการเช็คชื่อไม่ถูกต้อง');
-    }
-  });
-},
-        submitAnswer(index) {
-          const checkinId = this.selectedCheckin.id;
-          const questionId = this.questions[index].id;
-          const answer = {
-            student: {
-              name: this.user.displayName,
-              email: this.user.email
-            },
-            text: this.answers[index]
-          };
+        methods: {
+          google_login() {
+            const provider = new firebase.auth.GoogleAuthProvider();
+            auth.signInWithPopup(provider);
+          },
+          google_logout() {
+            auth.signOut();
+          },
+          checkUserRole() {
+            db.collection("teachers")
+              .doc(this.user.email)
+              .get()
+              .then((doc) => {
+                this.isTeacher = doc.exists;
+              });
+          },
+          addCheckin() {
+            const checkinId = this.generateRandomId();
+            db.collection("checkins")
+              .doc(checkinId)
+              .set({
+                subject: this.newCheckinData.subject,
+                room: this.newCheckinData.room,
+                class_date: this.newCheckinData.class_date, // หมายเหตุ: คุณอาจต้องแปลงเป็น Timestamp ของ Firestore ตามต้องการ
+              })
+              .then(() => {
+                console.log("Check-in added successfully");
+                // Reset form after successful submission
+                this.newCheckinData = {
+                  subject: "",
+                  room: "",
+                  class_date: new Date().toISOString().substr(0, 10),
+                };
+              })
+              .catch((error) => {
+                console.error("Error adding check-in: ", error);
+              });
+          },
+          generateRandomId() {
+            return (
+              Math.random().toString(36).substring(2, 15) +
+              Math.random().toString(36).substring(2, 15)
+            );
+          },
+          viewCheckin(checkin) {
+            this.selectedCheckin = checkin;
+            this.getCheckedInStudents();
+            this.getQuestions();
+            this.checkinDialog = true;
+          },
+          getCheckedInStudents() {
+            db.collection("students")
+              .where("checkins", "array-contains", this.selectedCheckin.id)
+              .get()
+              .then((snapshot) => {
+                this.checkedInStudents = snapshot.docs.map((doc) => ({
+                  id: doc.id,
+                  ...doc.data(),
+                }));
+              });
+          },
+          getQuestions() {
+            db.collection("checkins")
+              .doc(this.selectedCheckin.id)
+              .collection("questions")
+              .onSnapshot((snapshot) => {
+                this.questions = snapshot.docs.map((doc) => {
+                  const questionData = doc.data();
+                  questionData.id = doc.id;
+                  // สมมุติว่าคำตอบเก็บไว้ในฟิลด์ 'answers' ของเอกสารคำถาม
+                  questionData.answers = questionData.answers || [];
+                  return questionData;
+                });
+              });
+          },
 
-          db.collection('checkins').doc(checkinId).collection('questions').doc(questionId).update({
-            answers: firebase.firestore.FieldValue.arrayUnion(answer)
-          });
-        },
-        generateRandomId() {
-          return Math.random().toString(36).substr(2, 9);
-        }
-      }
+          addQuestion() {
+            if (this.newQuestion.trim() !== "") {
+              // เปลี่ยนจากการใช้ .add() เป็น .doc().set() ถ้าคุณต้องการกำหนด ID ของเอกสารด้วยตัวเอง
+              db.collection("checkins")
+                .doc(this.selectedCheckin.id)
+                .collection("questions")
+                .add({
+                  text: this.newQuestion,
+                  // เพิ่มฟิลด์อื่นๆ ถ้าจำเป็น
+                })
+                .then(() => {
+                  console.log("Question added successfully");
+                  this.newQuestion = "";
+                  // ทำการเรียก getQuestions() เพื่ออัพเดทรายการคำถาม
+                  this.getQuestions();
+                })
+                .catch((error) => {
+                  console.error("Error adding question: ", error);
+                });
+            }
+          },
+
+          // getQuestions() {
+          //   db.collection("checkins")
+          //     .doc(this.selectedCheckin.id)
+          //     .collection("questions")
+          //     .onSnapshot((snapshot) => {
+          //       this.questions = snapshot.docs.map((doc) => ({
+          //         id: doc.id,
+          //         text: doc.data().text,
+          //         // อาจจะมีฟิลด์อื่นๆ
+          //       }));
+          //     });
+          // },
+          checkinClass() {
+            const checkinId = this.checkinCode;
+            db.collection("checkins")
+              .doc(checkinId)
+              .get()
+              .then((doc) => {
+                if (doc.exists) {
+                  db.collection("students")
+                    .doc(this.user.email)
+                    .update({
+                      checkins:
+                        firebase.firestore.FieldValue.arrayUnion(checkinId),
+                    });
+
+                  // Fetch questions for this checkin
+                  db.collection("checkins")
+                    .doc(checkinId)
+                    .collection("questions")
+                    .get()
+                    .then((querySnapshot) => {
+                      this.questions = querySnapshot.docs.map((doc) => ({
+                        id: doc.id,
+                        text: doc.data().text,
+                        answers: [],
+                      }));
+                    });
+
+                  this.answers = new Array(this.questions.length).fill("");
+                } else {
+                  alert("รหัสการเช็คชื่อไม่ถูกต้อง");
+                }
+              });
+          },
+          submitAllAnswers() {
+            this.questions.forEach((question, index) => {
+              if (this.answers[index] !== "") {
+                const answer = {
+                  student: {
+                    name: this.user.displayName,
+                    email: this.user.email,
+                  },
+                  text: this.answers[index],
+                };
+
+                // เพิ่มการตรวจสอบคำตอบที่นี่
+                const checkinId = this.selectedCheckin.id; // หรือรหัสการเช็คชื่อที่เกี่ยวข้อง
+                const questionId = question.id;
+
+                db.collection("checkins")
+                  .doc(checkinId)
+                  .collection("questions")
+                  .doc(questionId)
+                  .update({
+                    answers: firebase.firestore.FieldValue.arrayUnion(answer),
+                  })
+                  .then(() => {
+                    console.log("Answer submitted successfully");
+                    // ตัวเลือก: รีเซ็ตคำตอบหลังจากส่ง
+                    this.answers[index] = "";
+                  })
+                  .catch((error) => {
+                    console.error("Error submitting answer: ", error);
+                  });
+              }
+            });
+          },
+          deleteCheckin(checkinId) {
+    db.collection("checkins")
+      .doc(checkinId)
+      .delete()
+      .then(() => {
+        console.log("Check-in deleted successfully");
+      })
+      .catch((error) => {
+        console.error("Error deleting check-in: ", error);
+      });
+  },
+  // editCheckin(checkinId, updatedData) {
+  //   db.collection("checkins")
+  //     .doc(checkinId)
+  //     .update(updatedData)
+  //     .then(() => {
+  //       console.log("Check-in updated successfully");
+  //     })
+  //     .catch((error) => {
+  //       console.error("Error updating check-in: ", error);
+  //     });
+  // },
+  editCheckin(checkin) {
+  // โหลดข้อมูลของห้องเรียนที่ต้องการแก้ไข
+  this.selectedCheckin = { ...checkin };
+  // เปิดฟอร์มหรือตัวแก้ไข
+  this.editDialog = true;
+},
+updateCheckin() {
+  const checkinId = this.selectedCheckin.id;
+  const updatedData = { 
+    subject: this.selectedCheckin.subject,
+    room: this.selectedCheckin.room
+  };
+  // อัปเดตข้อมูลห้องเรียนในฐานข้อมูล
+  db.collection("checkins")
+    .doc(checkinId)
+    .update(updatedData)
+    .then(() => {
+      console.log("Check-in updated successfully");
+      // ปิดฟอร์มหรือตัวแก้ไขหลังจากอัปเดตข้อมูล
+      this.editDialog = false;
+    })
+    .catch((error) => {
+      console.error("Error updating check-in: ", error);
     });
-    app.use(vuetify).mount('#app');
-  </script>
-</body>
+},
+cancelEdit() {
+  // ปิดฟอร์มหรือตัวแก้ไขโดยไม่บันทึกข้อมูล
+  this.editDialog = false;
+},
+  deleteCheckinDialog(checkinId) {
+    if (confirm("คุณแน่ใจหรือไม่ว่าต้องการลบห้องเรียนนี้?")) {
+      this.deleteCheckin(checkinId);
+    }
+  },
+          generateRandomId() {
+            return Math.random().toString(36).substr(2, 9);
+          },
+        },
+      });
+      app.use(vuetify).mount("#app");
+    </script>
+  </body>
 </html>
