@@ -73,33 +73,56 @@
                                 :key="checkin.id"
                               >
                                 <v-list-item-title
-                                  >{{ checkin.subject }} - {{ checkin.room }}
-                                  ({{ checkin.class_date }})</v-list-item-title
+                                  >{{ checkin.subject }} - {{ checkin.room }}-{{
+                                  checkin.class_date }}<br />
+                                  ({{ checkin.id }})</v-list-item-title
                                 >
                                 <v-list-item-action>
                                   <v-btn @click="viewCheckin(checkin)"
                                     >ดูข้อมูล</v-btn
                                   >
-                                  <v-btn @click="deleteCheckinDialog(checkin.id)">ลบ</v-btn>
-                                  <v-btn @click="editCheckin(checkin.id, updatedData)">แก้ไข</v-btn>
-
+                                  <v-btn
+                                    @click="deleteCheckinDialog(checkin.id)"
+                                    >ลบ</v-btn
+                                  >
+                                  <v-btn
+                                    @click="editCheckin(checkin.id, updatedData)"
+                                    >แก้ไข</v-btn
+                                  >
                                 </v-list-item-action>
-                                <v-dialog v-model="editDialog" persistent max-width="600px">
+                                <v-dialog
+                                  v-model="editDialog"
+                                  persistent
+                                  max-width="600px"
+                                >
                                   <v-card>
                                     <v-card-title>
                                       แก้ไขข้อมูลห้องเรียน
                                     </v-card-title>
                                     <v-card-text>
-                                      <v-text-field v-model="selectedCheckin.subject" label="วิชา"></v-text-field>
-                                      <v-text-field v-model="selectedCheckin.room" label="ห้องเรียน"></v-text-field>
+                                      <v-text-field
+                                        v-model="selectedCheckin.subject"
+                                        label="วิชา"
+                                      ></v-text-field>
+                                      <v-text-field
+                                        v-model="selectedCheckin.room"
+                                        label="ห้องเรียน"
+                                      ></v-text-field>
                                     </v-card-text>
                                     <v-card-actions>
-                                      <v-btn color="primary" @click="updateCheckin">บันทึก</v-btn>
-                                      <v-btn color="blue darken-1" @click="cancelEdit">ยกเลิก</v-btn>
+                                      <v-btn
+                                        color="primary"
+                                        @click="updateCheckin"
+                                        >บันทึก</v-btn
+                                      >
+                                      <v-btn
+                                        color="blue darken-1"
+                                        @click="cancelEdit"
+                                        >ยกเลิก</v-btn
+                                      >
                                     </v-card-actions>
                                   </v-card>
                                 </v-dialog>
-                                
                               </v-list-item>
                             </v-list>
                           </v-card-text>
@@ -130,28 +153,31 @@
                                   >
                                 </v-list-item>
                               </v-list>
-
                               <v-subheader>คำถาม</v-subheader>
                               <v-list
-                              v-for="(question, qIndex) in questions"
-                              :key="question.id"
-                            > 
+                                v-for="(question, index) in questions"
+                                :key="index"
+                              >
                                 <v-list-item>
                                   <v-list-item-content>
-                                    <v-list-item
-                                    v-for="(question, qIndex) in questions"
-                                    :key="question.id"
-                                                      >
-                                    <v-list-item-content>
-                                    <v-list-item-title>คำถามที่ {{ qIndex + 1 }}:</v-list-item-title>
-                                    <v-list-item-subtitle>{{ question.text }}</v-list-item-subtitle>
-                                    </v-list-item-content>
+                                    <v-list-item-title
+                                      >คำถามที่ {{ index + 1
+                                      }}:</v-list-item-title
+                                    >
+                                    <v-list-item-subtitle
+                                      >{{ question.text }}</v-list-item-subtitle
+                                    >
                                   </v-list-item-content>
                                 </v-list-item>
-                                <v-list-item
-                                    v-for="(answer, aIndex) in question.answers"
-                                 :key="answer.id"
+                                <v-list-item-action>
+                                  <v-btn @click="deleteQuestion(question.id)"
+                                    >ลบ</v-btn
                                   >
+                                </v-list-item-action>
+                                <v-list-item
+                                  v-for="answer in question.answers"
+                                  :key="answer.id"
+                                >
                                   <v-list-item-content>
                                     <v-list-item-title
                                       >{{ answer.student.name
@@ -200,12 +226,13 @@
                           <v-card-text>
                             <v-list
                               v-for="(question, index) in questions"
-                              :key="question.id"
+                              :key="index"
                             >
                               <v-list-item>
                                 <v-list-item-content>
                                   <v-list-item-title
-                                    >คำถามที่ {{ index + 1 }}:</v-list-item-title
+                                    >คำถามที่ {{ index + 1
+                                    }}:</v-list-item-title
                                   >
                                   <v-list-item-subtitle
                                     >{{ question.text }}</v-list-item-subtitle
@@ -269,10 +296,12 @@
             newCheckinData: {
               subject: "",
               room: "",
-              class_date: new Date().toISOString().substr(0, 10), // ตั้งค่าเริ่มต้นเป็นวันปัจจุบัน
+              class_date: new Date().toISOString().substr(0, 10),
             },
+            editDialog: false, // เพิ่ม editDialog เข้ามาในส่วนของ data()
           };
         },
+
         mounted() {
           // Check user authentication state
           auth.onAuthStateChanged((user) => {
@@ -354,55 +383,69 @@
                 }));
               });
           },
-          getQuestions() {
-            db.collection("checkins")
-              .doc(this.selectedCheckin.id)
-              .collection("questions")
-              .onSnapshot((snapshot) => {
-                this.questions = snapshot.docs.map((doc) => {
-                  const questionData = doc.data();
-                  questionData.id = doc.id;
-                  // สมมุติว่าคำตอบเก็บไว้ในฟิลด์ 'answers' ของเอกสารคำถาม
-                  questionData.answers = questionData.answers || [];
-                  return questionData;
+          deleteQuestion(questionId) {
+            if (confirm("คุณแน่ใจหรือไม่ว่าต้องการลบคำถามนี้?")) {
+              // เรียกใช้งาน Firestore เพื่อลบคำถาม
+              db.collection("checkins")
+                .doc(this.selectedCheckin.id)
+                .collection("questions")
+                .doc(questionId)
+                .delete()
+                .then(() => {
+                  console.log("คำถามถูกลบเรียบร้อยแล้ว");
+                })
+                .catch((error) => {
+                  console.error("เกิดข้อผิดพลาดในการลบคำถาม: ", error);
                 });
-              });
+            }
           },
-
           addQuestion() {
             if (this.newQuestion.trim() !== "") {
-              // เปลี่ยนจากการใช้ .add() เป็น .doc().set() ถ้าคุณต้องการกำหนด ID ของเอกสารด้วยตัวเอง
               db.collection("checkins")
                 .doc(this.selectedCheckin.id)
                 .collection("questions")
                 .add({
                   text: this.newQuestion,
-                  // เพิ่มฟิลด์อื่นๆ ถ้าจำเป็น
-                })
-                .then(() => {
-                  console.log("Question added successfully");
-                  this.newQuestion = "";
-                  // ทำการเรียก getQuestions() เพื่ออัพเดทรายการคำถาม
-                  this.getQuestions();
-                })
-                .catch((error) => {
-                  console.error("Error adding question: ", error);
+                  createdAt: firebase.firestore.FieldValue.serverTimestamp(), // เพิ่มฟิลด์ createdAt และกำหนดค่าเป็นเวลาปัจจุบัน
                 });
+              this.newQuestion = "";
             }
           },
 
-          // getQuestions() {
-          //   db.collection("checkins")
-          //     .doc(this.selectedCheckin.id)
-          //     .collection("questions")
-          //     .onSnapshot((snapshot) => {
-          //       this.questions = snapshot.docs.map((doc) => ({
-          //         id: doc.id,
-          //         text: doc.data().text,
-          //         // อาจจะมีฟิลด์อื่นๆ
-          //       }));
-          //     });
+          // addQuestion() {
+          //   if (this.newQuestion.trim() !== "") {
+          //     // เปลี่ยนจากการใช้ .add() เป็น .doc().set() ถ้าคุณต้องการกำหนด ID ของเอกสารด้วยตัวเอง
+          //     db.collection("checkins")
+          //       .doc(this.selectedCheckin.id)
+          //       .collection("questions")
+          //       .add({
+          //         text: this.newQuestion,
+          //         // เพิ่มฟิลด์อื่นๆ ถ้าจำเป็น
+          //       })
+          //       .then(() => {
+          //         console.log("Question added successfully");
+          //         this.newQuestion = "";
+          //         // ทำการเรียก getQuestions() เพื่ออัพเดทรายการคำถาม
+          //         this.getQuestions();
+          //       })
+          //       .catch((error) => {
+          //         console.error("Error adding question: ", error);
+          //       });
+          //   }
           // },
+          getQuestions() {
+            db.collection("checkins")
+              .doc(this.selectedCheckin.id)
+              .collection("questions")
+              .orderBy("createdAt", "asc") // เรียงลำดับตามฟิลด์ createdAt โดยมีลำดับจากใหม่ไปเก่า
+              .onSnapshot((snapshot) => {
+                this.questions = snapshot.docs.map((doc) => ({
+                  id: doc.id,
+                  text: doc.data().text,
+                  answers: doc.data().answers || [],
+                }));
+              });
+          },
           checkinClass() {
             const checkinId = this.checkinCode;
             db.collection("checkins")
@@ -448,7 +491,7 @@
                 };
 
                 // เพิ่มการตรวจสอบคำตอบที่นี่
-                const checkinId = this.selectedCheckin.id; // หรือรหัสการเช็คชื่อที่เกี่ยวข้อง
+                const checkinId = this.checkinCode; // หรือรหัสการเช็คชื่อที่เกี่ยวข้อง
                 const questionId = question.id;
 
                 db.collection("checkins")
@@ -469,43 +512,45 @@
               }
             });
           },
+
           deleteCheckin(checkinId) {
-    db.collection("checkins")
-      .doc(checkinId)
-      .delete()
-      .then(() => {
-        console.log("Check-in deleted successfully");
-      })
-      .catch((error) => {
-        console.error("Error deleting check-in: ", error);
-      });
-  },
-  // editCheckin(checkinId, updatedData) {
-  //   db.collection("checkins")
-  //     .doc(checkinId)
-  //     .update(updatedData)
-  //     .then(() => {
-  //       console.log("Check-in updated successfully");
-  //     })
-  //     .catch((error) => {
-  //       console.error("Error updating check-in: ", error);
-  //     });
-  // },
-  editCheckin(checkin) {
-  // โหลดข้อมูลของห้องเรียนที่ต้องการแก้ไข
-  this.selectedCheckin = { ...checkin };
-  // เปิดฟอร์มหรือตัวแก้ไข
-  this.editDialog = true;
-},
-updateCheckin() {
+            db.collection("checkins")
+              .doc(checkinId)
+              .delete()
+              .then(() => {
+                console.log("Check-in deleted successfully");
+              })
+              .catch((error) => {
+                console.error("Error deleting check-in: ", error);
+              });
+          },
+          // editCheckin(checkinId, updatedData) {
+          //   db.collection("checkins")
+          //     .doc(checkinId)
+          //     .update(updatedData)
+          //     .then(() => {
+          //       console.log("Check-in updated successfully");
+          //     })
+          //     .catch((error) => {
+          //       console.error("Error updating check-in: ", error);
+          //     });
+          // },
+          editCheckin(checkin) {
+            // โหลดข้อมูลของห้องเรียนที่ต้องการแก้ไข
+            this.selectedCheckin = { ...checkin };
+            // เปิดฟอร์มหรือตัวแก้ไข
+            this.editDialog = true;
+          },
+          updateCheckin() {
   const checkinId = this.selectedCheckin.id;
-  const updatedData = { 
+  const updatedData = {
     subject: this.selectedCheckin.subject,
-    room: this.selectedCheckin.room
+    room: this.selectedCheckin.room,
   };
-  // อัปเดตข้อมูลห้องเรียนในฐานข้อมูล
+
+  // อัปเดตข้อมูลในฐานข้อมูล
   db.collection("checkins")
-    .doc(checkinId)
+    .doc(checkinId) // ใช้ไอดีของเอกสารที่ต้องการอัปเดต
     .update(updatedData)
     .then(() => {
       console.log("Check-in updated successfully");
@@ -516,15 +561,17 @@ updateCheckin() {
       console.error("Error updating check-in: ", error);
     });
 },
-cancelEdit() {
-  // ปิดฟอร์มหรือตัวแก้ไขโดยไม่บันทึกข้อมูล
-  this.editDialog = false;
-},
-  deleteCheckinDialog(checkinId) {
-    if (confirm("คุณแน่ใจหรือไม่ว่าต้องการลบห้องเรียนนี้?")) {
-      this.deleteCheckin(checkinId);
-    }
-  },
+
+
+          cancelEdit() {
+            // ปิดฟอร์มหรือตัวแก้ไขโดยไม่บันทึกข้อมูล
+            this.editDialog = false;
+          },
+          deleteCheckinDialog(checkinId) {
+            if (confirm("คุณแน่ใจหรือไม่ว่าต้องการลบห้องเรียนนี้?")) {
+              this.deleteCheckin(checkinId);
+            }
+          },
           generateRandomId() {
             return Math.random().toString(36).substr(2, 9);
           },
